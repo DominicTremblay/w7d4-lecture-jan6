@@ -4,8 +4,12 @@ import NavBar from './NavBar';
 import ChatBar from './ChatBar';
 import MessageList from './MessageList';
 import lib from './lib/messages';
+import useSocket from './hooks/useSocket';
+import { SET_USERNAME } from './reducers/dataReducer';
 
 function App() {
+  const { state, dispatch } = useSocket('ws://localhost:3001');
+
   const [messages, setMessages] = useState(lib.messages);
   const [currentUser, setCurrentUser] = useState({ name: 'Anonymous' });
 
@@ -21,7 +25,9 @@ function App() {
       username: currentUser.name,
     };
 
-    setMessages([...messages, newMessage]);
+    // Sending message to server
+    state.socket.send(JSON.stringify(newMessage));
+    // setMessages([...messages, newMessage]);
   };
 
   const updateUser = username => {
@@ -35,16 +41,18 @@ function App() {
     };
 
     // updating the username in the state
-    setCurrentUser({ name: username });
-    setMessages([...messages, newNotification]);
+    dispatch({ type: SET_USERNAME, username: { name: username } });
+    // setCurrentUser({ name: username });
+    // setMessages([...messages, newNotification]);
+    state.socket.send(JSON.stringify(newNotification));
   };
 
   return (
     <div>
       <NavBar />
-      <MessageList messages={messages} />
+      <MessageList messages={state.messages} />
       <ChatBar
-        username={currentUser.name}
+        username={state.currentUser.name}
         sendMessage={sendMessage}
         updateUser={updateUser}
       />
